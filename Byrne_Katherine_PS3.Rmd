@@ -1,0 +1,86 @@
+--- 
+title: 'Problem Set #3'
+output: 
+  pdf_document: default
+bibliography: "../bib/references.bib"
+link_citations: true
+csl: "../bib/apa.csl"
+--- 
+
+```{r setup, include = F}
+knitr::opts_chunk$set(echo = F, warning = F, message = F, out.width = '75%', fig.align = 'center')
+options(repos = list(CRAN="http://cran.rstudio.com/"))
+
+# Load libraries
+library(tidyverse)
+library(scales)
+library(knitr)
+install.packages("kableExtra")
+library(kableExtra)
+install.packages('plyr', repos = "http://cran.us.r-project.org")
+
+# Directory paths
+data_dir <- file.path(".", "files")
+
+```
+
+
+# About the data
+@housing describes this dataset as information regarding housing prices in a given district taken from the 1990 California Census [@housing]. 
+
+```{r}
+getwd()
+list.files(data_dir)
+housing_df <- read_rds(file.path(data_dir, "housing.RDS"))
+ housing_df %>%
+      head(10) %>% 
+      kable() %>%
+      kable_styling(latex_options = c('scale_down', 'HOLD_position'))
+```
+
+
+# Data analysis
+
+#The homes inland cost the least money and are purchased more often by those with the lowest income.
+```{r}
+housing_df %>% ggplot(aes(x=median_income, y=median_house_value, color=ocean_proximity)) + geom_point() + ggtitle("Home Value by Income and Proximity to Ocean") + xlab("Income") + ylab("Home Value") + scale_color_brewer(palette = "Set3", name="Proximity to Ocean") + scale_y_continuous(labels = label_number(scale=1e-3, accuracy=1, suffix="K", prefix="$")) + scale_x_continuous(labels = label_number(scale=10, accuracy=1, suffix="K", prefix="$")) + theme_minimal()
+
+
+```
+#Most homes are not on an island.
+```{r}
+housing_df %>% ggplot(aes(x=median_income, y=median_house_value, )) + geom_point() + facet_wrap(~ ocean_proximity)  + ggtitle("Home Value by Income and Proximity to Ocean") + xlab("Income") + ylab("Home Value") + scale_color_brewer(palette = "Set3", name="Proximity to Ocean") + scale_y_continuous(labels = label_number(scale=1e-3, accuracy=1, suffix="K", prefix="$")) + theme_minimal()
+
+
+```
+#Homes by the ocean are between -125 and -117.5 degrees longitude.
+
+```{r}
+housing_df %>% ggplot(aes(x=longitude, y=latitude, color=ocean_proximity)) + geom_point() + ggtitle("latitude and longitude by ocean proximity") + xlab("Longitude") + ylab("Latitude") + scale_color_brewer(palette = "Set3", name="Proximity to Ocean") + coord_fixed() + theme_minimal()
+
+
+
+```
+#Homes by 40 degrees latitude are less expensive than 37.5 degrees latitude.
+
+```{r}
+housing_df %>% ggplot(aes(x=longitude, y=latitude, color=median_house_value)) + geom_point() + ggtitle("latitude and longitude by home value") + xlab("Longitude") + ylab("Latitude") + scale_color_gradient(low="white",high="purple", name="Home Value", labels=label_number(scale=1e-3, suffix="K", prefix="$")) + coord_fixed() + theme_minimal()
+
+
+```
+#Houses on the island are the most expensive.
+```{r}
+homevalue_count <- housing_df %>% group_by(ocean_proximity) %>% summarise(mean(median_house_value)) %>% rename("avg_home_value" = "mean(median_house_value)")
+
+homevalue_count %>% ggplot(aes(x=ocean_proximity, y=avg_home_value)) + geom_col() + ggtitle("Home Value by Proximity to Ocean") + xlab("Proximity to Ocean") + ylab("Home Value") + scale_y_continuous(labels = label_number(scale=1e-3, accuracy=1, suffix="K", prefix="$")) + theme_minimal()
+
+
+```
+**Bonus Plot: This chart shows the split of the quantity of houses in terms of their distance to the ocean.** 
+```{r}
+pie(table(housing_df$ocean_proximity), main = "Count of People Living Near Water")
+```
+
+
+# References
+
